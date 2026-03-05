@@ -6,76 +6,61 @@
   <title>Sign In — LearnFlow LMS</title>
   <link rel="stylesheet" href="style.css" />
   <style>
-    /* Extra login-page micro styles */
     .login-page { flex-direction: column; gap: 0; }
-
-    .demo-pills {
-      display: flex; gap: 8px; flex-wrap: wrap;
-      justify-content: center; margin-top: 20px;
+    .features-row {
+      display: flex; gap: 24px; justify-content: center;
+      flex-wrap: wrap; margin-top: 40px; position: relative; z-index: 1;
     }
-    .demo-pill {
+    .feature-pill { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary); }
+    .feature-pill span { font-size: 16px; }
+    .input-group { position: relative; }
+    .input-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 15px; pointer-events: none; }
+    .input-group .form-control { padding-left: 38px; }
+    .password-toggle { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 16px; color: var(--text-muted); transition: color var(--transition); }
+    .password-toggle:hover { color: var(--text-primary); }
+    .powered-by { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); font-size: 11px; color: var(--text-muted); z-index: 1; white-space: nowrap; }
+    .powered-by a { color: var(--accent); }
+    .note-text { font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 10px; }
+
+    /* First-time setup banner */
+    .setup-banner {
+      background: var(--amber-dim);
+      border: 1px solid var(--amber);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      font-size: 12px;
+      color: var(--amber);
+      margin-bottom: 18px;
+      text-align: center;
+      display: none;
+    }
+    .setup-banner strong { display: block; font-size: 13px; margin-bottom: 2px; }
+
+    /* Tab switcher inside admin panel */
+    .admin-tabs {
+      display: flex; gap: 4px;
       background: var(--bg-input);
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
-      padding: 8px 14px; font-size: 12px;
-      color: var(--text-secondary); cursor: pointer;
-      transition: all var(--transition);
+      padding: 4px; margin-bottom: 20px;
     }
-    .demo-pill:hover { border-color: var(--accent); color: var(--accent); }
-    .demo-pill strong { color: var(--text-primary); display: block; font-size: 11px; }
-
-    .features-row {
-      display: flex; gap: 24px; justify-content: center;
-      flex-wrap: wrap; margin-top: 40px;
-      position: relative; z-index: 1;
+    .admin-tab-btn {
+      flex: 1; padding: 8px;
+      border-radius: 6px; text-align: center;
+      font-size: 12px; font-weight: 600;
+      cursor: pointer; transition: all var(--transition);
+      color: var(--text-secondary);
     }
-    .feature-pill {
-      display: flex; align-items: center; gap: 8px;
-      font-size: 13px; color: var(--text-secondary);
-    }
-    .feature-pill span { font-size: 16px; }
-
-    .input-group { position: relative; }
-    .input-icon {
-      position: absolute; left: 12px; top: 50%;
-      transform: translateY(-50%);
-      font-size: 15px; pointer-events: none;
-    }
-    .input-group .form-control { padding-left: 38px; }
-
-    .password-toggle {
-      position: absolute; right: 12px; top: 50%;
-      transform: translateY(-50%);
-      cursor: pointer; font-size: 16px;
-      color: var(--text-muted); transition: color var(--transition);
-    }
-    .password-toggle:hover { color: var(--text-primary); }
-
-    .divider-or {
-      display: flex; align-items: center; gap: 12px;
-      margin: 20px 0; color: var(--text-muted); font-size: 12px;
-    }
-    .divider-or::before, .divider-or::after {
-      content: ''; flex: 1; height: 1px; background: var(--border);
+    .admin-tab-btn.active {
+      background: var(--accent);
+      color: #07091a;
     }
 
-    .student-fields { display: none; }
-    .admin-fields   { display: block; }
-
-    .powered-by {
-      position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
-      font-size: 11px; color: var(--text-muted); z-index: 1;
-      white-space: nowrap;
-    }
-    .powered-by a { color: var(--accent); }
-
-    @media (max-width: 480px) {
-      .login-card { padding: 28px 22px; }
-    }
+    @media (max-width: 480px) { .login-card { padding: 28px 22px; } }
   </style>
 </head>
 <body>
-  <!-- Background decoration -->
+
   <div class="login-bg-decor">
     <div class="orb orb-1"></div>
     <div class="orb orb-2"></div>
@@ -83,9 +68,7 @@
 
   <div class="login-page" style="min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;padding:20px;">
 
-    <!-- Login Card -->
     <div class="login-card">
-      <!-- Logo -->
       <div class="login-logo">
         <div class="logo-icon">🎓</div>
         <div class="logo-text">Learn<span>Flow</span></div>
@@ -100,60 +83,139 @@
         <div class="role-btn"       data-role="admin"   onclick="switchRole('admin')">🛡️ Admin</div>
       </div>
 
-      <!-- Student Fields -->
+      <!-- ══════════════════════════════
+           STUDENT — any email + password
+           ══════════════════════════════ -->
       <div id="student-fields">
         <div class="form-group">
-          <label class="form-label">Your Name</label>
+          <label class="form-label">Full Name</label>
           <div class="input-group">
             <span class="input-icon">👤</span>
             <input type="text" id="student-name" class="form-control"
-                   placeholder="Enter your full name" autocomplete="name" />
+                   placeholder="Enter your full name" autocomplete="name"
+                   onkeydown="if(event.key==='Enter') document.getElementById('student-email').focus()" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <div class="input-group">
+            <span class="input-icon">📧</span>
+            <input type="email" id="student-email" class="form-control"
+                   placeholder="yourname@gmail.com" autocomplete="email"
+                   onkeydown="if(event.key==='Enter') document.getElementById('student-password').focus()" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <div class="input-group">
+            <span class="input-icon">🔑</span>
+            <input type="password" id="student-password" class="form-control"
+                   placeholder="Any password (min 6 chars)" autocomplete="current-password"
+                   onkeydown="if(event.key==='Enter') loginStudent()" />
+            <span class="password-toggle" onclick="togglePw('student-password','s-eye')" id="s-eye">👁️</span>
           </div>
         </div>
         <button class="btn btn-primary btn-full btn-lg" onclick="loginStudent()">
           Start Learning →
         </button>
+        <p class="note-text">✅ Any Gmail or email works — no sign-up needed</p>
       </div>
 
-      <!-- Admin Fields -->
+      <!-- ══════════════════════════════
+           ADMIN — dynamic credentials
+           ══════════════════════════════ -->
       <div id="admin-fields" style="display:none;">
-        <div class="form-group">
-          <label class="form-label">Email Address</label>
-          <div class="input-group">
-            <span class="input-icon">📧</span>
-            <input type="email" id="admin-email" class="form-control"
-                   placeholder="admin@learnflow.io" autocomplete="email" />
-          </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Password</label>
-          <div class="input-group" style="position:relative;">
-            <span class="input-icon">🔑</span>
-            <input type="password" id="admin-password" class="form-control"
-                   placeholder="Enter password" autocomplete="current-password"
-                   onkeydown="if(event.key==='Enter') loginAdmin()" />
-            <span class="password-toggle" onclick="togglePw()" id="pw-toggle">👁️</span>
-          </div>
-        </div>
-        <button class="btn btn-primary btn-full btn-lg" onclick="loginAdmin()">
-          Sign In to Dashboard →
-        </button>
 
-        <div class="demo-pills">
-          <div class="demo-pill" onclick="fillAdminDemo()">
-            <strong>Demo Credentials</strong>
-            admin@learnflow.io / admin123
-          </div>
+        <!-- First-time setup warning -->
+        <div class="setup-banner" id="setup-banner">
+          <strong>⚙️ First Time Setup</strong>
+          No admin account found. Create one below!
         </div>
-      </div>
 
-      <div class="login-footer">
-        <span id="footer-text">New to LearnFlow? </span>
-        <span class="login-link" id="footer-link" onclick="switchRole('admin')">Admin login</span>
+        <!-- Login / Register tabs -->
+        <div class="admin-tabs">
+          <div class="admin-tab-btn active" id="tab-login-btn"  onclick="switchAdminTab('login')">🔐 Sign In</div>
+          <div class="admin-tab-btn"        id="tab-signup-btn" onclick="switchAdminTab('signup')">➕ Create Admin</div>
+        </div>
+
+        <!-- Admin Sign In -->
+        <div id="admin-login-panel">
+          <div class="form-group">
+            <label class="form-label">Admin Email</label>
+            <div class="input-group">
+              <span class="input-icon">📧</span>
+              <input type="email" id="admin-email" class="form-control"
+                     placeholder="your@email.com" autocomplete="email" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <div class="input-group">
+              <span class="input-icon">🔑</span>
+              <input type="password" id="admin-password" class="form-control"
+                     placeholder="Your admin password" autocomplete="current-password"
+                     onkeydown="if(event.key==='Enter') loginAdmin()" />
+              <span class="password-toggle" onclick="togglePw('admin-password','a-eye')" id="a-eye">👁️</span>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-full btn-lg" onclick="loginAdmin()">
+            Sign In to Dashboard →
+          </button>
+          <p class="note-text" style="margin-top:10px;">No account yet? Click <strong>Create Admin</strong> above.</p>
+        </div>
+
+        <!-- Admin Register / Create -->
+        <div id="admin-signup-panel" style="display:none;">
+          <div class="form-group">
+            <label class="form-label">Your Name</label>
+            <div class="input-group">
+              <span class="input-icon">👤</span>
+              <input type="text" id="reg-name" class="form-control" placeholder="Admin full name" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email Address</label>
+            <div class="input-group">
+              <span class="input-icon">📧</span>
+              <input type="email" id="reg-email" class="form-control" placeholder="your@email.com" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <div class="input-group">
+              <span class="input-icon">🔑</span>
+              <input type="password" id="reg-password" class="form-control"
+                     placeholder="Min 6 characters"
+                     onkeydown="if(event.key==='Enter') document.getElementById('reg-confirm').focus()" />
+              <span class="password-toggle" onclick="togglePw('reg-password','r-eye')" id="r-eye">👁️</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Confirm Password</label>
+            <div class="input-group">
+              <span class="input-icon">🔑</span>
+              <input type="password" id="reg-confirm" class="form-control"
+                     placeholder="Re-enter password"
+                     onkeydown="if(event.key==='Enter') registerAdmin()" />
+              <span class="password-toggle" onclick="togglePw('reg-confirm','rc-eye')" id="rc-eye">👁️</span>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-full btn-lg" onclick="registerAdmin()">
+            Create Admin Account →
+          </button>
+          <p class="note-text" style="margin-top:10px;">Already have an account? Click <strong>Sign In</strong> above.</p>
+        </div>
+
+      </div><!-- /admin-fields -->
+
+      <div class="login-footer" style="margin-top:20px;text-align:center;font-size:13px;color:var(--text-muted);">
+        <span id="footer-text">Are you an admin? </span>
+        <span class="login-link" id="footer-link"
+              style="color:var(--accent);font-weight:600;cursor:pointer;"
+              onclick="switchRole('admin')">Admin login</span>
       </div>
     </div>
 
-    <!-- Feature Pills -->
     <div class="features-row">
       <div class="feature-pill"><span>⚡</span> Instant Quizzes</div>
       <div class="feature-pill"><span>📊</span> Live Analytics</div>
@@ -162,18 +224,32 @@
     </div>
   </div>
 
-  <!-- Theme toggle fixed -->
   <button class="theme-toggle" style="position:fixed;top:16px;right:16px;z-index:999;" title="Toggle theme"></button>
-
   <p class="powered-by">Built with ❤️ by <a href="#">LearnFlow</a> · All data stored locally</p>
 
   <script src="script.js"></script>
   <script>
-    /* ── Role Switching ── */
+
+    /* ══════════════════════════════════════
+       ADMIN CREDENTIALS  (stored in localStorage)
+       Key: lms_admin_creds  →  { name, email, password }
+       ══════════════════════════════════════ */
+    const ADMIN_KEY = 'lms_admin_creds';
+
+    function getAdminCreds() {
+      try { return JSON.parse(localStorage.getItem(ADMIN_KEY)); }
+      catch { return null; }
+    }
+    function saveAdminCreds(data) {
+      localStorage.setItem(ADMIN_KEY, JSON.stringify(data));
+    }
+
+    /* ══════════════════════════════════════
+       ROLE SWITCHING
+       ══════════════════════════════════════ */
     function switchRole(role) {
-      document.querySelectorAll('.role-btn').forEach(b => {
-        b.classList.toggle('active', b.dataset.role === role);
-      });
+      document.querySelectorAll('.role-btn').forEach(b =>
+        b.classList.toggle('active', b.dataset.role === role));
       document.getElementById('student-fields').style.display = role === 'student' ? 'block' : 'none';
       document.getElementById('admin-fields').style.display   = role === 'admin'   ? 'block' : 'none';
 
@@ -187,52 +263,142 @@
         ftText.textContent = 'Not an admin? ';
         ftLink.textContent = 'Student access';
         ftLink.onclick = () => switchRole('student');
+
+        // If no admin account exists yet → auto-show signup tab
+        const creds = getAdminCreds();
+        if (!creds) {
+          document.getElementById('setup-banner').style.display = 'block';
+          switchAdminTab('signup');
+        } else {
+          document.getElementById('setup-banner').style.display = 'none';
+          switchAdminTab('login');
+        }
       }
     }
 
-    /* ── Student Login ── */
+    /* ══════════════════════════════════════
+       ADMIN TABS (Sign In / Create)
+       ══════════════════════════════════════ */
+    function switchAdminTab(tab) {
+      const isLogin = tab === 'login';
+      document.getElementById('admin-login-panel').style.display  = isLogin  ? 'block' : 'none';
+      document.getElementById('admin-signup-panel').style.display = !isLogin ? 'block' : 'none';
+      document.getElementById('tab-login-btn').classList.toggle('active',  isLogin);
+      document.getElementById('tab-signup-btn').classList.toggle('active', !isLogin);
+    }
+
+    /* ══════════════════════════════════════
+       STUDENT LOGIN — any email + password
+       ══════════════════════════════════════ */
     function loginStudent() {
-      const name = document.getElementById('student-name').value.trim();
-      if (!name) { showToast('Please enter your name', 'warn'); return; }
-      DB.set(KEYS.USER, { name, role: 'student' });
-      window.location.href = 'index.html';
-    }
+      const name  = document.getElementById('student-name').value.trim();
+      const email = document.getElementById('student-email').value.trim();
+      const pass  = document.getElementById('student-password').value;
 
-    /* ── Admin Login ── */
-    function loginAdmin() {
-      const email = document.getElementById('admin-email').value.trim();
-      const pass  = document.getElementById('admin-password').value;
-      // Demo credentials (in a real app use a backend)
-      if (email === 'admin@learnflow.io' && pass === 'admin123') {
-        DB.set(KEYS.USER, { name: 'Admin', role: 'admin', email });
-        window.location.href = 'admin.html';
-      } else {
-        showToast('Invalid credentials. Try: admin@learnflow.io / admin123', 'error');
-        document.getElementById('admin-password').value = '';
+      if (!name)  { showToast('Please enter your full name', 'warn'); return; }
+      if (!email) { showToast('Please enter your email address', 'warn'); return; }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        showToast('Please enter a valid email (e.g. you@gmail.com)', 'warn'); return;
       }
+      if (pass.length < 6) {
+        showToast('Password must be at least 6 characters', 'warn'); return;
+      }
+
+      Store.set(KEYS.USER, { name, email, role: 'student' });
+      showToast('Welcome, ' + name + '! 🎉', 'success');
+      setTimeout(() => { window.location.href = 'index.html'; }, 700);
     }
 
-    /* ── Toggle password visibility ── */
-    function togglePw() {
-      const input  = document.getElementById('admin-password');
-      const toggle = document.getElementById('pw-toggle');
-      input.type   = input.type === 'password' ? 'text' : 'password';
-      toggle.textContent = input.type === 'password' ? '👁️' : '🙈';
+    /* ══════════════════════════════════════
+       ADMIN LOGIN — checks localStorage creds
+       ══════════════════════════════════════ */
+    function loginAdmin() {
+      const email = document.getElementById('admin-email').value.trim().toLowerCase();
+      const pass  = document.getElementById('admin-password').value;
+
+      if (!email || !pass) { showToast('Please enter email and password', 'warn'); return; }
+
+      const creds = getAdminCreds();
+      if (!creds) {
+        showToast('No admin account found. Please create one first.', 'warn');
+        switchAdminTab('signup'); return;
+      }
+
+      if (email !== creds.email.toLowerCase()) {
+        showToast('Email not found', 'error'); return;
+      }
+      if (pass !== creds.password) {
+        showToast('Incorrect password', 'error');
+        document.getElementById('admin-password').value = ''; return;
+      }
+
+      // ✅ Credentials match
+      Store.set(KEYS.USER, { name: creds.name, role: 'admin', email: creds.email });
+      showToast('Welcome back, ' + creds.name + '! 🛡️', 'success');
+      setTimeout(() => { window.location.href = 'admin.html'; }, 700);
     }
 
-    /* ── Fill demo credentials ── */
-    function fillAdminDemo() {
-      document.getElementById('admin-email').value    = 'admin@learnflow.io';
-      document.getElementById('admin-password').value = 'admin123';
-      showToast('Demo credentials filled!', 'info');
+    /* ══════════════════════════════════════
+       ADMIN REGISTER — create new credentials
+       ══════════════════════════════════════ */
+    function registerAdmin() {
+      const name     = document.getElementById('reg-name').value.trim();
+      const email    = document.getElementById('reg-email').value.trim();
+      const password = document.getElementById('reg-password').value;
+      const confirm  = document.getElementById('reg-confirm').value;
+
+      if (!name)  { showToast('Please enter your name', 'warn'); return; }
+      if (!email) { showToast('Please enter your email', 'warn'); return; }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        showToast('Please enter a valid email', 'warn'); return;
+      }
+      if (password.length < 6) {
+        showToast('Password must be at least 6 characters', 'warn'); return;
+      }
+      if (password !== confirm) {
+        showToast('Passwords do not match', 'error'); return;
+      }
+
+      // Check if admin already exists
+      const existing = getAdminCreds();
+      if (existing) {
+        showToast('An admin account already exists. Please sign in.', 'warn');
+        switchAdminTab('login'); return;
+      }
+
+      // ✅ Save credentials to localStorage
+      saveAdminCreds({ name, email, password });
+      showToast('Admin account created! Please sign in.', 'success');
+
+      // Auto-fill and switch to login
+      document.getElementById('admin-email').value    = email;
+      document.getElementById('admin-password').value = '';
+      document.getElementById('setup-banner').style.display = 'none';
+      switchAdminTab('login');
     }
 
-    /* ── Check if already logged in ── */
+    /* ══════════════════════════════════════
+       PASSWORD VISIBILITY
+       ══════════════════════════════════════ */
+    function togglePw(inputId, eyeId) {
+      const input = document.getElementById(inputId);
+      const eye   = document.getElementById(eyeId);
+      input.type  = input.type === 'password' ? 'text' : 'password';
+      eye.textContent = input.type === 'password' ? '👁️' : '🙈';
+    }
+
+    /* ══════════════════════════════════════
+       INIT
+       ══════════════════════════════════════ */
     document.addEventListener('DOMContentLoaded', () => {
-      const user = DB.get(KEYS.USER);
-      if (user?.role === 'admin')   window.location.href = 'admin.html';
-      if (user?.role === 'student') window.location.href = 'index.html';
+      // Auto-redirect if already logged in
+      const user = Store.get(KEYS.USER);
+      if (user?.role === 'admin')   { window.location.href = 'admin.html'; return; }
+      if (user?.role === 'student') { window.location.href = 'index.html'; return; }
+
+      switchRole('student');
     });
+
   </script>
 </body>
 </html>
