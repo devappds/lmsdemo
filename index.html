@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quiz — LearnFlow LMS</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* ── Student-specific styles ── */
+
+    /* Top navigation bar for student */
+    .quiz-topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 28px;
+      height: var(--header-h);
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 50;
+    }
+    .quiz-topbar-left { display: flex; align-items: center; gap: 14px; }
+    .quiz-topbar-right { display: flex; align-items: center; gap: 10px; }
+
+    /* Landing screen */
+    .screen-landing-inner {
+      max-width: 660px; margin: 0 auto;
+      text-align: center; padding: 60px 20px;
+    }
+    .landing-hero-icon {
+      font-size: 80px;
+      display: inline-block;
+      animation: orb-float 5s ease-in-out infinite;
+      margin-bottom: 24px;
+    }
+    .landing-title {
+      font-size: clamp(32px, 5vw, 52px);
+      margin-bottom: 16px;
+      background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .landing-subtitle {
+      font-size: 17px; color: var(--text-secondary);
+      max-width: 480px; margin: 0 auto 40px; line-height: 1.7;
+    }
+
+    .quiz-info-row {
+      display: flex; gap: 16px; justify-content: center;
+      flex-wrap: wrap; margin-bottom: 40px;
+    }
+    .quiz-info-chip {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 14px 20px; min-width: 110px;
+      transition: all var(--transition);
+    }
+    .quiz-info-chip:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .quiz-info-chip .c-val {
+      font-family: 'Syne', sans-serif;
+      font-size: 26px; font-weight: 800; color: var(--accent);
+      line-height: 1; margin-bottom: 4px;
+    }
+    .quiz-info-chip .c-lbl {
+      font-size: 11px; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: .06em;
+    }
+
+    /* Name entry screen */
+    .name-screen {
+      max-width: 440px; margin: 0 auto;
+      padding: 40px 20px;
+    }
+    .name-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 36px 32px;
+      box-shadow: var(--shadow-card);
+    }
+    .name-card h2 { font-size: 24px; margin-bottom: 8px; }
+    .name-card p  { color: var(--text-secondary); margin-bottom: 28px; font-size: 14px; }
+
+    /* Quiz question screen */
+    .quiz-screen-inner {
+      max-width: 700px; margin: 0 auto; padding: 32px 20px;
+    }
+
+    /* Quick stats in quiz header */
+    .q-stats-row {
+      display: flex; gap: 12px; align-items: center;
+      flex-wrap: wrap; margin-bottom: 20px;
+    }
+    .q-stat-pill {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      padding: 5px 14px;
+      font-size: 13px; font-weight: 600;
+      display: flex; align-items: center; gap: 6px;
+    }
+
+    /* Navigation dots */
+    .q-dots {
+      display: flex; gap: 5px; justify-content: center;
+      padding: 16px 0 0;
+    }
+    .q-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--border);
+      transition: all var(--transition);
+    }
+    .q-dot.answered  { background: var(--accent); }
+    .q-dot.current   { background: var(--indigo); width: 20px; border-radius: 4px; }
+    .q-dot.wrong-dot { background: var(--rose); }
+
+    /* Results screen */
+    .results-screen-inner {
+      max-width: 620px; margin: 0 auto; padding: 32px 20px;
+    }
+
+    .result-breakdown {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 1px; background: var(--border);
+      border-radius: var(--radius-md); overflow: hidden;
+      margin-bottom: 24px;
+    }
+    .rb-item {
+      background: var(--bg-card);
+      padding: 20px; text-align: center;
+    }
+    .rb-val {
+      font-family: 'Syne', sans-serif;
+      font-size: 26px; font-weight: 800;
+      line-height: 1; margin-bottom: 4px;
+    }
+    .rb-lbl { font-size: 12px; color: var(--text-secondary); }
+
+    /* Answer review list */
+    .review-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px 18px; margin-bottom: 10px;
+      transition: all var(--transition);
+    }
+    .review-item.ri-correct { border-left: 3px solid var(--emerald); }
+    .review-item.ri-wrong   { border-left: 3px solid var(--rose); }
+    .review-item.ri-skip    { border-left: 3px solid var(--amber); }
+    .review-q { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+    .review-meta { font-size: 12px; color: var(--text-secondary); display: flex; gap: 14px; }
+
+    .leaderboard-wrap { margin-top: 24px; }
+    .lb-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+    .lb-row:last-child { border-bottom: none; }
+    .lb-rank { font-weight: 800; font-family: 'Syne',sans-serif; width: 28px; }
+    .lb-name { flex: 1; font-weight: 500; }
+    .lb-score { font-weight: 700; color: var(--accent); font-family: 'Syne',sans-serif; }
+
+    /* Responsive */
+    @media (max-width: 480px) {
+      .quiz-info-row { gap: 10px; }
+      .quiz-info-chip { padding: 12px 14px; min-width: 90px; }
+      .quiz-info-chip .c-val { font-size: 20px; }
+      .result-breakdown { grid-template-columns: 1fr 1fr 1fr; }
+      .rb-val { font-size: 20px; }
+      .name-card { padding: 24px 20px; }
+      .quiz-topbar { padding: 0 16px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Top bar -->
+  <header class="quiz-topbar">
+    <div class="quiz-topbar-left">
+      <div style="display:flex;align-items:center;gap:10px;cursor:pointer;" onclick="window.location.href='login.html'">
+        <div class="logo-icon" style="width:32px;height:32px;font-size:16px;">🎓</div>
+        <span class="logo-text" style="font-size:16px;">Learn<span>Flow</span></span>
+      </div>
+    </div>
+
+    <!-- Quiz progress (only visible during quiz) -->
+    <div id="topbar-progress" style="flex:1;max-width:300px;margin:0 32px;display:none;">
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted);margin-bottom:4px;">
+        <span id="tb-q-label">Question 1</span>
+        <span id="tb-score-live">Score: 0</span>
+      </div>
+      <div class="progress-track" style="height:5px;">
+        <div class="progress-fill" id="tb-progress-fill" style="width:0%"></div>
+      </div>
+    </div>
+
+    <div class="quiz-topbar-right">
+      <div class="icon-btn" onclick="window.location.href='login.html'" title="Home">🏠</div>
+      <button class="theme-toggle" title="Toggle theme"></button>
+    </div>
+  </header>
+
+  <!-- ════ SCREEN: LANDING ════ -->
+  <div id="screen-landing" class="quiz-screen" style="min-height:calc(100vh - 68px);display:flex;align-items:center;justify-content:center;position:relative;z-index:1;">
+    <div class="screen-landing-inner">
+      <div class="landing-hero-icon">🎯</div>
+      <h1 class="landing-title">Test Your Knowledge</h1>
+      <p class="landing-subtitle">
+        Challenge yourself with our interactive quiz. Track your progress,
+        earn your score, and see how you rank!
+      </p>
+
+      <div class="quiz-info-row" data-stagger id="landing-chips">
+        <div class="quiz-info-chip">
+          <div class="c-val" id="landing-total-q">—</div>
+          <div class="c-lbl">Questions</div>
+        </div>
+        <div class="quiz-info-chip">
+          <div class="c-val" id="landing-timer">—</div>
+          <div class="c-lbl">Time Limit</div>
+        </div>
+        <div class="quiz-info-chip">
+          <div class="c-val">70%</div>
+          <div class="c-lbl">Pass Mark</div>
+        </div>
+        <div class="quiz-info-chip">
+          <div class="c-val">30s</div>
+          <div class="c-lbl">Per Question</div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary btn-lg" onclick="Quiz.startNameEntry()" style="margin-bottom:16px;min-width:200px;">
+        Start Quiz →
+      </button>
+      <br/>
+      <button class="btn btn-secondary" onclick="showLeaderboard()" style="min-width:160px;">
+        🏆 Leaderboard
+      </button>
+
+      <!-- Mini leaderboard preview -->
+      <div id="landing-leaderboard" style="margin-top:36px;display:none;max-width:400px;margin-left:auto;margin-right:auto;">
+        <div class="card">
+          <div class="card-header">
+            <div class="section-title" style="font-size:15px;">🏆 Top Scores</div>
+            <button class="btn btn-secondary btn-sm" onclick="document.getElementById('landing-leaderboard').style.display='none'">✕</button>
+          </div>
+          <div id="lb-content" style="padding:0 0 8px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ SCREEN: NAME ENTRY ════ -->
+  <div id="screen-name" class="quiz-screen" style="display:none;min-height:calc(100vh - 68px);display:none;align-items:center;justify-content:center;">
+    <div class="name-screen" style="padding-top:60px;">
+      <div class="name-card animate-fade-up">
+        <h2>Before we begin…</h2>
+        <p>Enter your name so we can personalise your results and add you to the leaderboard.</p>
+        <div class="form-group">
+          <label class="form-label">Your Full Name</label>
+          <input type="text" id="student-name-input" class="form-control"
+                 placeholder="e.g. Alex Johnson"
+                 onkeydown="if(event.key==='Enter') Quiz.beginQuiz()" />
+        </div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+          <button class="btn btn-primary" style="flex:1;min-width:140px;" onclick="Quiz.beginQuiz()">
+            Begin Quiz 🚀
+          </button>
+          <button class="btn btn-secondary" onclick="Quiz.restart()">← Back</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ SCREEN: QUIZ ════ -->
+  <div id="screen-quiz" class="quiz-screen" style="display:none;position:relative;z-index:1;">
+    <div class="quiz-screen-inner">
+
+      <!-- Progress + Timer row -->
+      <div class="q-stats-row">
+        <div class="q-stat-pill">
+          📋 <span id="q-num">Question 1 of 1</span>
+        </div>
+        <div class="q-stat-pill" id="timer-wrapper">
+          <span id="timer-display" class="timer-display">⏱ 00:30</span>
+        </div>
+      </div>
+
+      <!-- Main progress bar -->
+      <div class="progress-track" style="margin-bottom:24px;">
+        <div class="progress-fill" id="q-progress-fill" style="width:0%;"></div>
+      </div>
+
+      <!-- Question Card -->
+      <div class="question-card">
+        <div class="question-body">
+          <div class="question-text" id="q-text">Loading question…</div>
+          <div class="options-list" id="options-list">
+            <!-- Dynamic -->
+          </div>
+        </div>
+        <div class="question-footer">
+          <div style="font-size:13px;color:var(--text-muted);">
+            Select an answer to continue
+          </div>
+          <button class="btn btn-primary" id="btn-next" disabled onclick="Quiz.handleNext()">
+            Next →
+          </button>
+        </div>
+      </div>
+
+      <!-- Navigation dots -->
+      <div class="q-dots" id="q-dots"></div>
+
+    </div>
+  </div>
+
+  <!-- ════ SCREEN: RESULTS ════ -->
+  <div id="screen-results" class="quiz-screen" style="display:none;position:relative;z-index:1;">
+    <div class="results-screen-inner">
+
+      <!-- Score card -->
+      <div class="results-card">
+        <div class="results-header">
+          <div class="result-emoji" id="result-emoji">🎉</div>
+          <h2>Well done, <span id="result-name">Student</span>!</h2>
+          <p id="result-msg">Great job! Here are your results.</p>
+
+          <!-- Donut -->
+          <div class="donut-wrap" style="margin-top:24px;">
+            <svg width="120" height="120" viewBox="0 0 120 120">
+              <circle class="donut-bg" cx="60" cy="60" r="45" stroke-width="12"/>
+              <circle class="donut-fill" id="donut-fill" cx="60" cy="60" r="45" stroke-width="12"
+                      stroke="var(--accent)" stroke-dasharray="283" stroke-dashoffset="283"/>
+            </svg>
+            <div class="donut-label">
+              <div class="val" id="result-pct">0%</div>
+              <div class="lbl">Score</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stat breakdown -->
+        <div class="result-breakdown">
+          <div class="rb-item">
+            <div class="rb-val text-accent" id="result-score">0/0</div>
+            <div class="rb-lbl">Score</div>
+          </div>
+          <div class="rb-item">
+            <div class="rb-val" style="color:var(--emerald);" id="result-correct">0</div>
+            <div class="rb-lbl">Correct</div>
+          </div>
+          <div class="rb-item">
+            <div class="rb-val" style="color:var(--rose);" id="result-wrong">0</div>
+            <div class="rb-lbl">Wrong</div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--border);">
+          <div class="rb-item" style="border-right:1px solid var(--border);">
+            <div class="rb-val" style="color:var(--amber);" id="result-time-stat">00:00</div>
+            <div class="rb-lbl">Time Taken</div>
+          </div>
+          <div class="rb-item">
+            <div class="rb-val" id="result-rank" style="color:var(--indigo);">—</div>
+            <div class="rb-lbl">Your Rank</div>
+          </div>
+        </div>
+
+        <div style="padding:20px 24px;display:flex;gap:12px;flex-wrap:wrap;justify-content:center;">
+          <button class="btn btn-primary" onclick="Quiz.restart()">🔄 Retake Quiz</button>
+          <button class="btn btn-secondary" onclick="toggleReview()">📋 Review Answers</button>
+          <button class="btn btn-secondary" onclick="shareResult()">🔗 Share</button>
+        </div>
+      </div>
+
+      <!-- Answer Review -->
+      <div id="review-section" style="display:none;margin-top:24px;">
+        <div class="section-header">
+          <div class="section-title">Answer Review</div>
+          <button class="btn btn-secondary btn-sm" onclick="toggleReview()">✕ Close</button>
+        </div>
+        <div id="review-list"></div>
+      </div>
+
+      <!-- Leaderboard in results -->
+      <div class="leaderboard-wrap">
+        <div class="section-header" style="margin-top:24px;">
+          <div class="section-title">🏆 Leaderboard</div>
+        </div>
+        <div class="card" style="overflow:hidden;">
+          <div id="results-leaderboard"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+  <script>
+    /* ════════════════════════════════════
+       STUDENT INTERFACE EXTRAS
+       ════════════════════════════════════ */
+
+    /* ── Auth check (allow guest) ── */
+    document.addEventListener('DOMContentLoaded', () => {
+      // Students can use without login; just need a name
+      Quiz.renderLanding();
+
+      // Stagger landing chips
+      setTimeout(() => {
+        document.querySelectorAll('[data-stagger]').forEach(el => el.classList.add('ready'));
+      }, 100);
+    });
+
+    /* Override Quiz to also update topbar progress and dots */
+    const _origBegin  = Quiz.beginQuiz.bind(Quiz);
+    const _origHandle = Quiz.handleNext.bind(Quiz);
+    const _origSelect = Quiz.selectOption.bind(Quiz);
+    const _origRestart = Quiz.restart.bind(Quiz);
+
+    /* Monkey-patch Quiz methods to add UI extras */
+    Quiz.beginQuiz = function() {
+      _origBegin();
+      document.getElementById('topbar-progress').style.display = 'flex';
+    };
+    Quiz.restart = function() {
+      document.getElementById('topbar-progress').style.display = 'none';
+      document.getElementById('review-section').style.display = 'none';
+      _origRestart();
+    };
+
+    /* Intercept selectOption to update dots */
+    Quiz.selectOption = function(idx) {
+      _origSelect(idx);
+      updateDots();
+    };
+
+    /* After renderQuestion, re-render dots */
+    const _origRender = Quiz.renderLanding;
+    // Hook into DOM mutation instead
+    const observer = new MutationObserver(() => {
+      // whenever screen-quiz becomes visible, refresh dots
+      const sq = document.getElementById('screen-quiz');
+      if (sq && sq.style.display !== 'none') updateDots();
+    });
+    observer.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['style'] });
+
+    /* ── Navigation Dots ── */
+    function updateDots() {
+      // Access quiz internal state via localStorage answers approximation
+      // We'll use a simpler approach: track via DOM
+      const qNum = document.getElementById('q-num')?.textContent || '';
+      const match = qNum.match(/(\d+) of (\d+)/);
+      if (!match) return;
+      const cur   = parseInt(match[1]) - 1;
+      const total = parseInt(match[2]);
+      const dots  = document.getElementById('q-dots');
+      if (!dots) return;
+
+      if (!window._dotStates) window._dotStates = new Array(total).fill('unanswered');
+      dots.innerHTML = window._dotStates.map((state, i) => {
+        let cls = 'q-dot';
+        if (i === cur) cls += ' current';
+        else if (state === 'answered') cls += ' answered';
+        else if (state === 'wrong') cls += ' wrong-dot';
+        return `<div class="${cls}" title="Q${i+1}"></div>`;
+      }).join('');
+    }
+
+    /* ── Show/Hide Leaderboard ── */
+    function showLeaderboard() {
+      const lb = document.getElementById('landing-leaderboard');
+      lb.style.display = lb.style.display === 'none' ? 'block' : 'none';
+      renderLeaderboard('lb-content');
+    }
+
+    function renderLeaderboard(containerId) {
+      const results = DB.get(KEYS.RESULTS, []);
+      const container = document.getElementById(containerId);
+      if (!container) return;
+
+      // Best score per student
+      const grouped = {};
+      results.forEach(r => {
+        const key = r.studentName.toLowerCase();
+        if (!grouped[key] || r.percentage > grouped[key].percentage) {
+          grouped[key] = r;
+        }
+      });
+      const sorted = Object.values(grouped).sort((a,b) => b.percentage - a.percentage).slice(0,10);
+      const medals = ['🥇','🥈','🥉'];
+
+      if (sorted.length === 0) {
+        container.innerHTML = `<div style="text-align:center;padding:24px;color:var(--text-muted);font-size:14px;">No entries yet. Be the first!</div>`;
+        return;
+      }
+
+      container.innerHTML = sorted.map((r,i) => `
+        <div class="lb-row">
+          <div class="lb-rank">${medals[i] || `#${i+1}`}</div>
+          <div>
+            <div class="avatar" style="width:28px;height:28px;font-size:11px;display:inline-flex;margin-right:8px;">${r.studentName[0].toUpperCase()}</div>
+          </div>
+          <div class="lb-name">${r.studentName}</div>
+          <div class="lb-score">${r.percentage}%</div>
+        </div>
+      `).join('');
+    }
+
+    /* ── Results leaderboard ── */
+    function renderResultsLeaderboard() {
+      renderLeaderboard('results-leaderboard');
+    }
+
+    /* ── Toggle answer review ── */
+    let reviewVisible = false;
+    function toggleReview() {
+      reviewVisible = !reviewVisible;
+      document.getElementById('review-section').style.display = reviewVisible ? 'block' : 'none';
+      if (reviewVisible) renderReview();
+    }
+
+    function renderReview() {
+      // We'll re-read last result from storage
+      const results = DB.get(KEYS.RESULTS, []);
+      const last = results[results.length - 1];
+      if (!last) return;
+
+      // We need question/answer data — stored in window._lastQuizData
+      const data = window._lastQuizData;
+      if (!data) {
+        document.getElementById('review-list').innerHTML =
+          `<p style="color:var(--text-muted);font-size:14px;">Review not available</p>`;
+        return;
+      }
+      const letters = ['A','B','C','D'];
+      document.getElementById('review-list').innerHTML = data.questions.map((q, i) => {
+        const chosen = data.answers[i];
+        const isCorrect = chosen === q.correct;
+        const isSkip = chosen === -1;
+        const cls = isSkip ? 'ri-skip' : isCorrect ? 'ri-correct' : 'ri-wrong';
+        return `
+          <div class="review-item ${cls}">
+            <div class="review-q">${i+1}. ${q.question}</div>
+            <div class="review-meta">
+              <span>✅ Correct: <strong>${q.options[q.correct]}</strong></span>
+              <span>${isSkip ? '⏭️ Skipped' : isCorrect ? '✅ Your answer: ' + q.options[chosen] : '❌ Your answer: ' + (chosen >= 0 ? q.options[chosen] : '—')}</span>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    /* ── Share result ── */
+    function shareResult() {
+      const results = DB.get(KEYS.RESULTS, []);
+      const last = results[results.length - 1];
+      if (!last) return;
+      const text = `🎓 I scored ${last.percentage}% (${last.score}/${last.total}) on LearnFlow Quiz! Can you beat me?`;
+      if (navigator.share) {
+        navigator.share({ title: 'LearnFlow Quiz Result', text });
+      } else {
+        navigator.clipboard?.writeText(text).then(() => showToast('Result copied to clipboard!', 'success'));
+      }
+    }
+
+    /* ── Hook into Quiz finish to store Q&A for review ── */
+    // Intercept Quiz's internal finishQuiz by wrapping beginQuiz
+    const _realBeginQuiz = Quiz.beginQuiz.bind(Quiz);
+    Quiz.beginQuiz = function() {
+      window._dotStates = null; // reset dots
+      _realBeginQuiz();
+    };
+
+    // Override: after results render, update leaderboard + rank
+    const origRenderResults = Quiz.restart; // just to get a hook
+    // We patch via a post-message pattern instead:
+    // Watch for screen-results becoming visible
+    const resultObserver = new MutationObserver(() => {
+      const sr = document.getElementById('screen-results');
+      if (sr && sr.style.display !== 'none' && sr.style.display !== '') {
+        setTimeout(() => {
+          renderResultsLeaderboard();
+          updateRank();
+        }, 200);
+      }
+    });
+    resultObserver.observe(document.getElementById('screen-results') || document.body,
+      { attributes: true, attributeFilter: ['style'] });
+
+    function updateRank() {
+      const results = DB.get(KEYS.RESULTS, []);
+      const last = results[results.length - 1];
+      if (!last) return;
+
+      // Rank among all students (by best score)
+      const grouped = {};
+      results.forEach(r => {
+        const k = r.studentName.toLowerCase();
+        if (!grouped[k] || r.percentage > grouped[k]) grouped[k] = r.percentage;
+      });
+      const sorted = Object.values(grouped).sort((a,b) => b-a);
+      const rank = sorted.indexOf(last.percentage) + 1;
+      const total = sorted.length;
+      const rankEl = document.getElementById('result-rank');
+      if (rankEl) rankEl.textContent = `#${rank} of ${total}`;
+    }
+  </script>
+</body>
+</html>

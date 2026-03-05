@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard — LearnFlow LMS</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* ── Admin-specific styles ── */
+    .q-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 18px 20px;
+      display: flex; align-items: flex-start; gap: 16px;
+      transition: all var(--transition);
+      animation: fade-up 0.35s ease both;
+    }
+    .q-card:hover { border-color: var(--border-light); transform: translateX(3px); }
+    .q-num {
+      width: 34px; height: 34px;
+      border-radius: 8px;
+      background: var(--accent-dim);
+      color: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 800;
+      flex-shrink: 0;
+    }
+    .q-content { flex: 1; min-width: 0; }
+    .q-text { font-size: 14px; font-weight: 600; margin-bottom: 10px; line-height: 1.4; }
+    .q-options { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .q-opt {
+      font-size: 12px; color: var(--text-secondary);
+      padding: 5px 10px;
+      background: var(--bg-surface); border: 1px solid var(--border);
+      border-radius: 6px; display: flex; gap: 6px; align-items: center;
+    }
+    .q-opt.correct {
+      border-color: var(--emerald); color: var(--emerald);
+      background: var(--emerald-dim);
+    }
+    .q-opt-letter {
+      font-weight: 700; font-size: 11px;
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 4px; padding: 1px 5px;
+    }
+    .q-meta { font-size: 11px; color: var(--text-muted); margin-top: 10px; }
+    .q-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+
+    /* Questions list */
+    #questions-list { display: flex; flex-direction: column; gap: 14px; }
+
+    /* Results table rows */
+    .score-badge {
+      display: inline-flex; align-items: center;
+      padding: 3px 10px; border-radius: 99px;
+      font-size: 12px; font-weight: 700;
+    }
+    .score-badge.ex { background: var(--emerald-dim); color: var(--emerald); }
+    .score-badge.gd { background: var(--accent-dim);  color: var(--accent);  }
+    .score-badge.av { background: var(--amber-dim);   color: var(--amber);   }
+    .score-badge.pr { background: var(--rose-dim);    color: var(--rose);    }
+
+    /* Add question form */
+    .form-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-card);
+    }
+    .options-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+    }
+    .option-input-wrap { position: relative; }
+    .option-letter-badge {
+      position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+      width: 22px; height: 22px; border-radius: 5px;
+      background: var(--accent-dim); color: var(--accent);
+      font-size: 11px; font-weight: 800; font-family: 'Syne', sans-serif;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .option-input-wrap .form-control { padding-left: 42px; }
+
+    /* Analytics chart card */
+    .analytics-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+    .chart-labels {
+      display: flex; justify-content: space-between;
+      margin-top: 8px;
+    }
+    .chart-label { font-size: 10px; color: var(--text-muted); }
+
+    /* Donut chart in analytics */
+    .analytics-donut { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+    .legend { width: 100%; }
+    .legend-item {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 13px; padding: 6px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .legend-item:last-child { border-bottom: none; }
+    .legend-dot {
+      width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+    }
+    .legend-val { margin-left: auto; font-weight: 700; font-family: 'Syne',sans-serif; }
+
+    /* Confirm modal */
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(0,0,0,.65);
+      backdrop-filter: blur(4px); z-index: 500;
+      display: flex; align-items: center; justify-content: center;
+      animation: fade-in 0.2s ease;
+    }
+    .modal {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      max-width: 380px; width: 90%;
+      box-shadow: var(--shadow-card);
+      animation: fade-up 0.25s ease;
+    }
+    .modal h3 { margin-bottom: 10px; font-size: 18px; }
+    .modal p  { color: var(--text-secondary); font-size: 14px; margin-bottom: 24px; }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+
+    @media (max-width: 900px) {
+      .analytics-grid { grid-template-columns: 1fr; }
+      .options-grid   { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+
+    <!-- ═══ SIDEBAR ═══ -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-icon">🎓</div>
+        <div class="logo-text">Learn<span>Flow</span></div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-section-label">Main</div>
+        <div class="nav-item active" data-page="admin.html" onclick="showTab('dashboard')">
+          <span class="icon">📊</span> Dashboard
+        </div>
+        <div class="nav-item" onclick="showTab('questions')">
+          <span class="icon">❓</span> Questions
+          <span class="nav-badge" id="nav-q-count">0</span>
+        </div>
+        <div class="nav-item" onclick="showTab('add-question')">
+          <span class="icon">➕</span> Add Question
+        </div>
+        <div class="nav-item" onclick="showTab('analytics')">
+          <span class="icon">📈</span> Analytics
+        </div>
+        <div class="nav-item" onclick="showTab('results')">
+          <span class="icon">🏅</span> Results
+          <span class="nav-badge" id="nav-r-count">0</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section" style="margin-top: 10px;">
+        <div class="sidebar-section-label">System</div>
+        <div class="nav-item" onclick="window.open('index.html','_blank')">
+          <span class="icon">🎒</span> Student View
+        </div>
+        <div class="nav-item" onclick="logout()">
+          <span class="icon">🚪</span> Logout
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="user-info">
+          <div class="avatar" id="admin-avatar">A</div>
+          <div>
+            <div class="user-name" id="admin-name">Admin</div>
+            <div class="user-role">Administrator</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Overlay for mobile -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <!-- ═══ MAIN ═══ -->
+    <main class="main">
+
+      <!-- Top Bar -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <div class="hamburger" onclick="document.getElementById('sidebar').classList.toggle('open');document.getElementById('sidebar-overlay').classList.toggle('open');">
+            <span></span><span></span><span></span>
+          </div>
+          <div>
+            <div class="page-title" id="page-title">Dashboard</div>
+            <div class="breadcrumb" id="page-breadcrumb">Overview & Statistics</div>
+          </div>
+        </div>
+        <div class="topbar-right">
+          <div class="icon-btn" title="Notifications" onclick="showToast('No new notifications','info')">
+            🔔 <span class="notif-dot"></span>
+          </div>
+          <button class="theme-toggle" title="Toggle theme"></button>
+          <div class="icon-btn" title="Logout" onclick="logout()">🚪</div>
+        </div>
+      </header>
+
+      <!-- ─── TAB: Dashboard ─── -->
+      <div class="page-content" id="tab-dashboard">
+
+        <!-- Stat Cards -->
+        <div class="grid-4 mb-24" data-stagger id="stat-grid">
+          <div class="stat-card accent card-hover">
+            <div class="stat-icon accent">❓</div>
+            <div class="stat-value" id="stat-total-q">0</div>
+            <div class="stat-label">Total Questions</div>
+            <div class="stat-delta text-accent">↑ Active Bank</div>
+          </div>
+          <div class="stat-card indigo card-hover">
+            <div class="stat-icon indigo">📝</div>
+            <div class="stat-value" id="stat-quizzes">0</div>
+            <div class="stat-label">Quizzes Taken</div>
+            <div class="stat-delta" style="color:var(--indigo)">↑ All time</div>
+          </div>
+          <div class="stat-card amber card-hover">
+            <div class="stat-icon amber">⭐</div>
+            <div class="stat-value" id="stat-avg">0%</div>
+            <div class="stat-label">Average Score</div>
+            <div class="stat-delta" style="color:var(--amber)">↗ Class avg</div>
+          </div>
+          <div class="stat-card emerald card-hover">
+            <div class="stat-icon emerald">🏆</div>
+            <div class="stat-value" id="stat-top">—</div>
+            <div class="stat-label">Top Student</div>
+            <div class="stat-delta" style="color:var(--emerald)">↑ Best score</div>
+          </div>
+        </div>
+
+        <!-- Recent Activity + Score Distribution -->
+        <div class="analytics-grid">
+          <!-- Weekly Quiz Activity -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="section-title">Quiz Activity</div>
+                <div class="section-subtitle">Quizzes taken — last 7 days</div>
+              </div>
+              <span class="badge badge-accent">Live</span>
+            </div>
+            <div class="card-body">
+              <div class="chart-bar-wrap" id="activity-chart" style="height:80px;"></div>
+              <div class="chart-labels" id="activity-labels"></div>
+            </div>
+          </div>
+
+          <!-- Score Distribution donut -->
+          <div class="card">
+            <div class="card-header">
+              <div class="section-title">Score Distribution</div>
+            </div>
+            <div class="card-body analytics-donut">
+              <div class="donut-wrap">
+                <svg width="120" height="120" viewBox="0 0 120 120">
+                  <circle class="donut-bg" cx="60" cy="60" r="45" stroke-width="12"/>
+                  <circle class="donut-fill" id="dash-donut" cx="60" cy="60" r="45" stroke-width="12"
+                          stroke="var(--accent)" stroke-dasharray="283" stroke-dashoffset="283"/>
+                </svg>
+                <div class="donut-label">
+                  <div class="val" id="dash-donut-val">0%</div>
+                  <div class="lbl">Pass Rate</div>
+                </div>
+              </div>
+              <div class="legend" id="score-legend">
+                <div class="legend-item">
+                  <div class="legend-dot" style="background:var(--emerald)"></div>
+                  <span style="font-size:12px;color:var(--text-secondary)">Excellent (≥90%)</span>
+                  <div class="legend-val text-accent" id="leg-excellent">0</div>
+                </div>
+                <div class="legend-item">
+                  <div class="legend-dot" style="background:var(--accent)"></div>
+                  <span style="font-size:12px;color:var(--text-secondary)">Good (70-89%)</span>
+                  <div class="legend-val text-accent" id="leg-good">0</div>
+                </div>
+                <div class="legend-item">
+                  <div class="legend-dot" style="background:var(--amber)"></div>
+                  <span style="font-size:12px;color:var(--text-secondary)">Average (50-69%)</span>
+                  <div class="legend-val text-accent" id="leg-average">0</div>
+                </div>
+                <div class="legend-item">
+                  <div class="legend-dot" style="background:var(--rose)"></div>
+                  <span style="font-size:12px;color:var(--text-secondary)">Poor (&lt;50%)</span>
+                  <div class="legend-val text-accent" id="leg-poor">0</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Results -->
+        <div class="mt-24">
+          <div class="section-header">
+            <div>
+              <div class="section-title">Recent Results</div>
+              <div class="section-subtitle">Latest student submissions</div>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="showTab('results')">View All →</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Student</th>
+                  <th>Score</th>
+                  <th>Percentage</th>
+                  <th>Time</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody id="recent-results-tbody">
+                <tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:30px;">No results yet</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div><!-- /tab-dashboard -->
+
+      <!-- ─── TAB: Questions ─── -->
+      <div class="page-content" id="tab-questions" style="display:none;">
+        <div class="section-header">
+          <div>
+            <div class="section-title">Question Bank</div>
+            <div class="section-subtitle" id="q-count-label">All questions</div>
+          </div>
+          <div style="display:flex;gap:10px;">
+            <button class="btn btn-secondary btn-sm" onclick="exportQuestions()">⬇ Export</button>
+            <button class="btn btn-primary btn-sm" onclick="showTab('add-question')">+ Add Question</button>
+          </div>
+        </div>
+        <div id="questions-list">
+          <!-- Dynamic -->
+        </div>
+      </div><!-- /tab-questions -->
+
+      <!-- ─── TAB: Add Question ─── -->
+      <div class="page-content" id="tab-add-question" style="display:none;">
+        <div class="section-header">
+          <div>
+            <div class="section-title" id="form-title">Add New Question</div>
+            <div class="section-subtitle">Fill in the question details below</div>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="cancelEdit()">✕ Cancel</button>
+        </div>
+
+        <div class="form-card">
+          <div class="card-header">
+            <div class="section-title">Question Details</div>
+            <span class="badge badge-accent">Required Fields *</span>
+          </div>
+          <div class="card-body">
+            <!-- Hidden edit ID -->
+            <input type="hidden" id="edit-id" value="" />
+
+            <!-- Question Text -->
+            <div class="form-group">
+              <label class="form-label">Question *</label>
+              <textarea id="f-question" class="form-control" rows="3"
+                        placeholder="Type your question here..."></textarea>
+            </div>
+
+            <!-- Options -->
+            <div class="form-group">
+              <label class="form-label">Answer Options *</label>
+              <div class="options-grid">
+                <div class="option-input-wrap">
+                  <div class="option-letter-badge">A</div>
+                  <input type="text" id="f-opt-a" class="form-control" placeholder="Option A" />
+                </div>
+                <div class="option-input-wrap">
+                  <div class="option-letter-badge">B</div>
+                  <input type="text" id="f-opt-b" class="form-control" placeholder="Option B" />
+                </div>
+                <div class="option-input-wrap">
+                  <div class="option-letter-badge">C</div>
+                  <input type="text" id="f-opt-c" class="form-control" placeholder="Option C" />
+                </div>
+                <div class="option-input-wrap">
+                  <div class="option-letter-badge">D</div>
+                  <input type="text" id="f-opt-d" class="form-control" placeholder="Option D" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Correct Answer -->
+            <div class="form-group">
+              <label class="form-label">Correct Answer *</label>
+              <select id="f-correct" class="form-control">
+                <option value="">— Select correct answer —</option>
+                <option value="0">A — Option A</option>
+                <option value="1">B — Option B</option>
+                <option value="2">C — Option C</option>
+                <option value="3">D — Option D</option>
+              </select>
+            </div>
+
+            <!-- Submit -->
+            <div style="display:flex;gap:12px;margin-top:8px;">
+              <button class="btn btn-primary" onclick="saveQuestion()" id="save-btn">
+                💾 Save Question
+              </button>
+              <button class="btn btn-secondary" onclick="clearForm()">🔄 Clear</button>
+            </div>
+          </div>
+        </div>
+      </div><!-- /tab-add-question -->
+
+      <!-- ─── TAB: Analytics ─── -->
+      <div class="page-content" id="tab-analytics" style="display:none;">
+        <div class="section-header">
+          <div class="section-title">Analytics</div>
+          <div class="section-subtitle">Detailed performance insights</div>
+        </div>
+
+        <div class="grid-4 mb-24" data-stagger>
+          <div class="stat-card accent">
+            <div class="stat-icon accent">📊</div>
+            <div class="stat-value" id="an-total-q">0</div>
+            <div class="stat-label">Questions</div>
+          </div>
+          <div class="stat-card indigo">
+            <div class="stat-icon indigo">👥</div>
+            <div class="stat-value" id="an-students">0</div>
+            <div class="stat-label">Unique Students</div>
+          </div>
+          <div class="stat-card amber">
+            <div class="stat-icon amber">⏱️</div>
+            <div class="stat-value" id="an-avg-time">—</div>
+            <div class="stat-label">Avg Time (min)</div>
+          </div>
+          <div class="stat-card emerald">
+            <div class="stat-icon emerald">✅</div>
+            <div class="stat-value" id="an-pass-rate">0%</div>
+            <div class="stat-label">Pass Rate (≥70%)</div>
+          </div>
+        </div>
+
+        <!-- Score histogram -->
+        <div class="card mb-24">
+          <div class="card-header">
+            <div class="section-title">Score Histogram</div>
+            <div class="section-subtitle">Distribution of scores across all quizzes</div>
+          </div>
+          <div class="card-body">
+            <div id="histogram-wrap" style="display:flex;align-items:flex-end;gap:8px;height:100px;"></div>
+            <div style="display:flex;justify-content:space-between;margin-top:8px;">
+              <span class="chart-label">0–20%</span>
+              <span class="chart-label">21–40%</span>
+              <span class="chart-label">41–60%</span>
+              <span class="chart-label">61–80%</span>
+              <span class="chart-label">81–100%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Top performers table -->
+        <div class="card">
+          <div class="card-header">
+            <div class="section-title">Top Performers</div>
+          </div>
+          <div class="table-wrap" style="border:none;border-radius:0;box-shadow:none;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th>Student</th>
+                  <th>Best Score</th>
+                  <th>Attempts</th>
+                </tr>
+              </thead>
+              <tbody id="top-performers-tbody">
+                <tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:30px;">No data yet</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div><!-- /tab-analytics -->
+
+      <!-- ─── TAB: Results ─── -->
+      <div class="page-content" id="tab-results" style="display:none;">
+        <div class="section-header">
+          <div>
+            <div class="section-title">All Results</div>
+            <div class="section-subtitle" id="results-count-label">All submissions</div>
+          </div>
+          <div style="display:flex;gap:10px;">
+            <button class="btn btn-danger btn-sm" onclick="clearResults()">🗑 Clear All</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Student</th>
+                <th>Score</th>
+                <th>%</th>
+                <th>Grade</th>
+                <th>Time</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody id="all-results-tbody">
+              <tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:30px;">No results yet</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div><!-- /tab-results -->
+
+    </main><!-- /main -->
+  </div><!-- /layout -->
+
+  <!-- Delete Confirm Modal -->
+  <div class="modal-backdrop" id="confirm-modal" style="display:none;">
+    <div class="modal">
+      <h3>Delete Question?</h3>
+      <p>This action cannot be undone. The question will be permanently removed from the bank.</p>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-danger" onclick="confirmDelete()">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+  <script>
+    /* ════════════════════════════════════
+       ADMIN DASHBOARD LOGIC
+       ════════════════════════════════════ */
+    let pendingDeleteId = null;
+
+    /* ── Auth guard ── */
+    document.addEventListener('DOMContentLoaded', () => {
+      const user = DB.get(KEYS.USER);
+      if (!user || user.role !== 'admin') { window.location.href = 'login.html'; return; }
+
+      // Set admin name
+      document.getElementById('admin-name').textContent = user.name || 'Admin';
+      document.getElementById('admin-avatar').textContent = (user.name || 'A')[0].toUpperCase();
+
+      renderDashboard();
+    });
+
+    /* ── Tab Navigation ── */
+    const tabs = {
+      dashboard:    { el: 'tab-dashboard',     title: 'Dashboard',     sub: 'Overview & Statistics' },
+      questions:    { el: 'tab-questions',      title: 'Question Bank', sub: 'Manage all questions' },
+      'add-question':{ el: 'tab-add-question',  title: 'Add Question',  sub: 'Create a new quiz item' },
+      analytics:    { el: 'tab-analytics',      title: 'Analytics',     sub: 'Performance insights' },
+      results:      { el: 'tab-results',        title: 'Results',       sub: 'All student submissions' },
+    };
+
+    function showTab(name) {
+      Object.entries(tabs).forEach(([key, cfg]) => {
+        document.getElementById(cfg.el).style.display = key === name ? '' : 'none';
+      });
+      document.getElementById('page-title').textContent = tabs[name].title;
+      document.getElementById('page-breadcrumb').textContent = tabs[name].sub;
+
+      // Highlight active nav
+      document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+      // match by onclick text
+      document.querySelectorAll('.nav-item').forEach(item => {
+        if (item.getAttribute('onclick')?.includes(`'${name}'`)) item.classList.add('active');
+      });
+
+      // Render the active tab
+      if (name === 'dashboard')    renderDashboard();
+      if (name === 'questions')    renderQuestions();
+      if (name === 'analytics')    renderAnalytics();
+      if (name === 'results')      renderResults();
+
+      // Close mobile sidebar
+      document.getElementById('sidebar')?.classList.remove('open');
+      document.getElementById('sidebar-overlay')?.classList.remove('open');
+    }
+
+    /* ══════════════════════════════════════
+       DASHBOARD RENDER
+       ══════════════════════════════════════ */
+    function renderDashboard() {
+      const questions = DB.get(KEYS.QUESTIONS, []);
+      const results   = DB.get(KEYS.RESULTS, []);
+
+      // Stat cards
+      const totalQ = questions.length;
+      const totalR = results.length;
+      const avgPct = totalR > 0
+        ? Math.round(results.reduce((a, r) => a + r.percentage, 0) / totalR)
+        : 0;
+      const topStudent = totalR > 0
+        ? results.reduce((best, r) => r.percentage > best.percentage ? r : best, results[0])
+        : null;
+
+      animateCount(document.getElementById('stat-total-q'), totalQ);
+      animateCount(document.getElementById('stat-quizzes'), totalR);
+      document.getElementById('stat-avg').textContent = avgPct + '%';
+      document.getElementById('stat-top').textContent = topStudent
+        ? topStudent.studentName.split(' ')[0]
+        : '—';
+
+      // Update nav badges
+      document.getElementById('nav-q-count').textContent = totalQ;
+      document.getElementById('nav-r-count').textContent = totalR;
+
+      // Score distribution donut
+      const grades = { excellent:0, good:0, average:0, poor:0 };
+      results.forEach(r => {
+        if (r.percentage >= 90) grades.excellent++;
+        else if (r.percentage >= 70) grades.good++;
+        else if (r.percentage >= 50) grades.average++;
+        else grades.poor++;
+      });
+      const passRate = totalR > 0
+        ? Math.round(((grades.excellent + grades.good) / totalR) * 100)
+        : 0;
+      document.getElementById('dash-donut-val').textContent = passRate + '%';
+      const fill = document.getElementById('dash-donut');
+      if (fill) {
+        setTimeout(() => {
+          fill.style.strokeDashoffset = 283 - (283 * passRate / 100);
+        }, 300);
+      }
+      document.getElementById('leg-excellent').textContent = grades.excellent;
+      document.getElementById('leg-good').textContent = grades.good;
+      document.getElementById('leg-average').textContent = grades.average;
+      document.getElementById('leg-poor').textContent = grades.poor;
+
+      // Activity chart (last 7 days)
+      renderActivityChart(results);
+
+      // Recent results table (latest 5)
+      const recent = [...results].sort((a,b) => b.date - a.date).slice(0, 5);
+      const tbody = document.getElementById('recent-results-tbody');
+      if (recent.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:30px;">No results yet</td></tr>`;
+      } else {
+        tbody.innerHTML = recent.map(r => `
+          <tr>
+            <td><strong>${r.studentName}</strong></td>
+            <td>${r.score}/${r.total}</td>
+            <td><span class="score-badge ${gradeBadge(r.percentage)}">${r.percentage}%</span></td>
+            <td>${fmtTime(r.timeTaken)}</td>
+            <td style="color:var(--text-secondary);font-size:13px;">${fmtDate(r.date)}</td>
+          </tr>
+        `).join('');
+      }
+
+      initStagger();
+    }
+
+    function gradeBadge(pct) {
+      if (pct >= 90) return 'ex';
+      if (pct >= 70) return 'gd';
+      if (pct >= 50) return 'av';
+      return 'pr';
+    }
+
+    function renderActivityChart(results) {
+      const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+      const now  = new Date();
+      const buckets = Array.from({ length: 7 }, (_, i) => {
+        const d = new Date(now);
+        d.setDate(d.getDate() - (6 - i));
+        return {
+          label: days[d.getDay()],
+          date: d,
+          val: 0,
+        };
+      });
+      results.forEach(r => {
+        const rd = new Date(r.date);
+        buckets.forEach(b => {
+          if (rd.toDateString() === b.date.toDateString()) b.val++;
+        });
+      });
+      const max = Math.max(...buckets.map(b => b.val), 1);
+      renderBarChart('activity-chart', buckets.map((b,i) => ({ ...b, filled: i === 6 })), max);
+      document.getElementById('activity-labels').innerHTML =
+        buckets.map(b => `<span class="chart-label">${b.label}</span>`).join('');
+    }
+
+    /* ══════════════════════════════════════
+       QUESTIONS RENDER
+       ══════════════════════════════════════ */
+    function renderQuestions() {
+      const questions = DB.get(KEYS.QUESTIONS, []);
+      const list = document.getElementById('questions-list');
+      document.getElementById('q-count-label').textContent = `${questions.length} questions in bank`;
+
+      if (questions.length === 0) {
+        list.innerHTML = `
+          <div class="empty-state">
+            <div class="icon">❓</div>
+            <h3>No Questions Yet</h3>
+            <p>Start building your quiz bank by adding questions.</p>
+            <br/>
+            <button class="btn btn-primary" onclick="showTab('add-question')">+ Add First Question</button>
+          </div>`;
+        return;
+      }
+
+      const letters = ['A','B','C','D'];
+      list.innerHTML = questions.map((q, i) => `
+        <div class="q-card" style="animation-delay:${i * 0.05}s">
+          <div class="q-num">${i + 1}</div>
+          <div class="q-content">
+            <div class="q-text">${q.question}</div>
+            <div class="q-options">
+              ${q.options.map((opt, oi) => `
+                <div class="q-opt ${oi === q.correct ? 'correct' : ''}">
+                  <span class="q-opt-letter">${letters[oi]}</span>${opt}
+                  ${oi === q.correct ? ' ✓' : ''}
+                </div>
+              `).join('')}
+            </div>
+            <div class="q-meta">Added ${fmtDate(q.createdAt)}</div>
+          </div>
+          <div class="q-actions">
+            <button class="btn btn-secondary btn-sm" onclick="editQuestion('${q.id}')">✏️</button>
+            <button class="btn btn-danger btn-sm" onclick="openDeleteModal('${q.id}')">🗑️</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    /* ══════════════════════════════════════
+       ADD / EDIT / DELETE QUESTION
+       ══════════════════════════════════════ */
+    function saveQuestion() {
+      const id       = document.getElementById('edit-id').value;
+      const question = document.getElementById('f-question').value.trim();
+      const optA     = document.getElementById('f-opt-a').value.trim();
+      const optB     = document.getElementById('f-opt-b').value.trim();
+      const optC     = document.getElementById('f-opt-c').value.trim();
+      const optD     = document.getElementById('f-opt-d').value.trim();
+      const correct  = document.getElementById('f-correct').value;
+
+      // Validation
+      if (!question) return showToast('Question text is required', 'warn');
+      if (!optA || !optB || !optC || !optD) return showToast('All four options are required', 'warn');
+      if (correct === '') return showToast('Please select the correct answer', 'warn');
+
+      const questions = DB.get(KEYS.QUESTIONS, []);
+
+      if (id) {
+        // Edit existing
+        const idx = questions.findIndex(q => q.id === id);
+        if (idx !== -1) {
+          questions[idx] = { ...questions[idx], question, options: [optA,optB,optC,optD], correct: parseInt(correct) };
+          DB.set(KEYS.QUESTIONS, questions);
+          showToast('Question updated successfully!', 'success');
+        }
+      } else {
+        // New question
+        questions.push({
+          id: uid(), createdAt: Date.now(),
+          question,
+          options: [optA, optB, optC, optD],
+          correct: parseInt(correct),
+        });
+        DB.set(KEYS.QUESTIONS, questions);
+        showToast('Question added to bank!', 'success');
+      }
+
+      clearForm();
+      showTab('questions');
+    }
+
+    function editQuestion(id) {
+      const questions = DB.get(KEYS.QUESTIONS, []);
+      const q = questions.find(q => q.id === id);
+      if (!q) return;
+
+      document.getElementById('edit-id').value        = q.id;
+      document.getElementById('f-question').value     = q.question;
+      document.getElementById('f-opt-a').value        = q.options[0] || '';
+      document.getElementById('f-opt-b').value        = q.options[1] || '';
+      document.getElementById('f-opt-c').value        = q.options[2] || '';
+      document.getElementById('f-opt-d').value        = q.options[3] || '';
+      document.getElementById('f-correct').value      = String(q.correct);
+      document.getElementById('form-title').textContent = 'Edit Question';
+      document.getElementById('save-btn').textContent    = '💾 Update Question';
+
+      showTab('add-question');
+    }
+
+    function clearForm() {
+      ['edit-id','f-question','f-opt-a','f-opt-b','f-opt-c','f-opt-d'].forEach(id => {
+        document.getElementById(id).value = '';
+      });
+      document.getElementById('f-correct').value = '';
+      document.getElementById('form-title').textContent = 'Add New Question';
+      document.getElementById('save-btn').textContent = '💾 Save Question';
+    }
+
+    function cancelEdit() { clearForm(); showTab('questions'); }
+
+    function openDeleteModal(id) {
+      pendingDeleteId = id;
+      document.getElementById('confirm-modal').style.display = 'flex';
+    }
+    function closeModal() {
+      pendingDeleteId = null;
+      document.getElementById('confirm-modal').style.display = 'none';
+    }
+    function confirmDelete() {
+      if (!pendingDeleteId) return;
+      const questions = DB.get(KEYS.QUESTIONS, []);
+      DB.set(KEYS.QUESTIONS, questions.filter(q => q.id !== pendingDeleteId));
+      closeModal();
+      showToast('Question deleted', 'warn');
+      renderQuestions();
+      document.getElementById('nav-q-count').textContent = DB.get(KEYS.QUESTIONS, []).length;
+    }
+
+    function exportQuestions() {
+      const data = JSON.stringify(DB.get(KEYS.QUESTIONS, []), null, 2);
+      const blob = new Blob([data], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'learnflow_questions.json';
+      a.click();
+      showToast('Questions exported!', 'success');
+    }
+
+    /* ══════════════════════════════════════
+       ANALYTICS
+       ══════════════════════════════════════ */
+    function renderAnalytics() {
+      const questions = DB.get(KEYS.QUESTIONS, []);
+      const results   = DB.get(KEYS.RESULTS, []);
+      const totalR    = results.length;
+
+      document.getElementById('an-total-q').textContent = questions.length;
+
+      // Unique students
+      const unique = new Set(results.map(r => r.studentName.toLowerCase())).size;
+      document.getElementById('an-students').textContent = unique;
+
+      // Avg time
+      if (totalR > 0) {
+        const avgTime = Math.round(results.reduce((a, r) => a + r.timeTaken, 0) / totalR);
+        document.getElementById('an-avg-time').textContent = fmtTime(avgTime);
+      }
+
+      // Pass rate
+      const passed = results.filter(r => r.percentage >= 70).length;
+      const passRate = totalR > 0 ? Math.round((passed / totalR) * 100) : 0;
+      document.getElementById('an-pass-rate').textContent = passRate + '%';
+
+      // Histogram
+      const bins = [0,0,0,0,0]; // 0-20, 21-40, 41-60, 61-80, 81-100
+      results.forEach(r => {
+        const b = Math.min(Math.floor(r.percentage / 20), 4);
+        bins[b]++;
+      });
+      const maxBin = Math.max(...bins, 1);
+      const histWrap = document.getElementById('histogram-wrap');
+      histWrap.innerHTML = bins.map((val, i) => {
+        const h = Math.round((val / maxBin) * 100);
+        const colours = ['var(--rose)','var(--amber)','var(--amber)','var(--accent)','var(--emerald)'];
+        return `<div style="flex:1;height:${h}%;border-radius:4px 4px 0 0;background:${colours[i]};opacity:0.8;transition:height 0.8s ease;cursor:default;" title="${val} students"></div>`;
+      }).join('');
+
+      // Top performers
+      const grouped = {};
+      results.forEach(r => {
+        const key = r.studentName.toLowerCase();
+        if (!grouped[key]) grouped[key] = { name: r.studentName, best: 0, attempts: 0 };
+        grouped[key].best = Math.max(grouped[key].best, r.percentage);
+        grouped[key].attempts++;
+      });
+      const top = Object.values(grouped).sort((a,b) => b.best - a.best).slice(0,10);
+      const rankEmojis = ['🥇','🥈','🥉'];
+      const tbody = document.getElementById('top-performers-tbody');
+      tbody.innerHTML = top.length === 0
+        ? `<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:30px;">No data yet</td></tr>`
+        : top.map((s, i) => `
+          <tr>
+            <td>${rankEmojis[i] || `#${i+1}`}</td>
+            <td><strong>${s.name}</strong></td>
+            <td><span class="score-badge ${gradeBadge(s.best)}">${s.best}%</span></td>
+            <td style="color:var(--text-secondary)">${s.attempts}</td>
+          </tr>
+        `).join('');
+
+      initStagger();
+    }
+
+    /* ══════════════════════════════════════
+       ALL RESULTS
+       ══════════════════════════════════════ */
+    function renderResults() {
+      const results = DB.get(KEYS.RESULTS, []).sort((a,b) => b.date - a.date);
+      document.getElementById('results-count-label').textContent = `${results.length} submissions`;
+      document.getElementById('nav-r-count').textContent = results.length;
+
+      const gradeLabels = { ex:'Excellent', gd:'Good', av:'Average', pr:'Needs Work' };
+      const tbody = document.getElementById('all-results-tbody');
+      tbody.innerHTML = results.length === 0
+        ? `<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:30px;">No results yet</td></tr>`
+        : results.map((r, i) => {
+          const gb = gradeBadge(r.percentage);
+          return `
+            <tr>
+              <td style="color:var(--text-muted)">${i+1}</td>
+              <td><strong>${r.studentName}</strong></td>
+              <td>${r.score} / ${r.total}</td>
+              <td>${r.percentage}%</td>
+              <td><span class="score-badge ${gb}">${gradeLabels[gb]}</span></td>
+              <td style="color:var(--text-secondary)">${fmtTime(r.timeTaken)}</td>
+              <td style="color:var(--text-secondary);font-size:13px;">${fmtDate(r.date)}</td>
+            </tr>`;
+        }).join('');
+    }
+
+    function clearResults() {
+      if (!confirm('Are you sure you want to delete ALL student results? This cannot be undone.')) return;
+      DB.del(KEYS.RESULTS);
+      showToast('All results cleared', 'warn');
+      renderResults();
+      renderDashboard();
+    }
+
+    /* ── Logout ── */
+    function logout() {
+      DB.del(KEYS.USER);
+      window.location.href = 'login.html';
+    }
+  </script>
+</body>
+</html>
