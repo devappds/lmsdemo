@@ -22,39 +22,46 @@
     .powered-by a { color: var(--accent); }
     .note-text { font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 10px; }
 
-    /* First-time setup banner */
-    .setup-banner {
-      background: var(--amber-dim);
-      border: 1px solid var(--amber);
+    /* Info box showing saved email */
+    .saved-account-box {
+      background: var(--accent-dim);
+      border: 1px solid var(--accent);
       border-radius: var(--radius-sm);
       padding: 10px 14px;
-      font-size: 12px;
-      color: var(--amber);
-      margin-bottom: 18px;
-      text-align: center;
-      display: none;
+      font-size: 12px; color: var(--accent);
+      margin-bottom: 16px; text-align: center;
+    }
+    .saved-account-box strong { display: block; font-size: 13px; color: var(--text-primary); margin-bottom: 2px; }
+
+    /* Setup banner */
+    .setup-banner {
+      background: var(--amber-dim); border: 1px solid var(--amber);
+      border-radius: var(--radius-sm); padding: 10px 14px;
+      font-size: 12px; color: var(--amber);
+      margin-bottom: 16px; text-align: center; display: none;
     }
     .setup-banner strong { display: block; font-size: 13px; margin-bottom: 2px; }
 
-    /* Tab switcher inside admin panel */
+    /* Admin tabs */
     .admin-tabs {
       display: flex; gap: 4px;
-      background: var(--bg-input);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 4px; margin-bottom: 20px;
+      background: var(--bg-input); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 4px; margin-bottom: 20px;
     }
     .admin-tab-btn {
-      flex: 1; padding: 8px;
-      border-radius: 6px; text-align: center;
-      font-size: 12px; font-weight: 600;
-      cursor: pointer; transition: all var(--transition);
-      color: var(--text-secondary);
+      flex: 1; padding: 8px; border-radius: 6px; text-align: center;
+      font-size: 12px; font-weight: 600; cursor: pointer;
+      transition: all var(--transition); color: var(--text-secondary);
     }
-    .admin-tab-btn.active {
-      background: var(--accent);
-      color: #07091a;
+    .admin-tab-btn.active { background: var(--accent); color: #07091a; }
+
+    /* Reset link */
+    .reset-link {
+      font-size: 11px; color: var(--rose); cursor: pointer;
+      text-align: center; margin-top: 12px; display: block;
+      transition: opacity var(--transition);
     }
+    .reset-link:hover { opacity: 0.7; }
 
     @media (max-width: 480px) { .login-card { padding: 28px 22px; } }
   </style>
@@ -67,8 +74,8 @@
   </div>
 
   <div class="login-page" style="min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;padding:20px;">
-
     <div class="login-card">
+
       <div class="login-logo">
         <div class="logo-icon">🎓</div>
         <div class="logo-text">Learn<span>Flow</span></div>
@@ -83,9 +90,7 @@
         <div class="role-btn"       data-role="admin"   onclick="switchRole('admin')">🛡️ Admin</div>
       </div>
 
-      <!-- ══════════════════════════════
-           STUDENT — any email + password
-           ══════════════════════════════ -->
+      <!-- ══ STUDENT ══ -->
       <div id="student-fields">
         <div class="form-group">
           <label class="form-label">Full Name</label>
@@ -110,7 +115,7 @@
           <div class="input-group">
             <span class="input-icon">🔑</span>
             <input type="password" id="student-password" class="form-control"
-                   placeholder="Any password (min 6 chars)" autocomplete="current-password"
+                   placeholder="Any password (min 6 chars)"
                    onkeydown="if(event.key==='Enter') loginStudent()" />
             <span class="password-toggle" onclick="togglePw('student-password','s-eye')" id="s-eye">👁️</span>
           </div>
@@ -121,24 +126,28 @@
         <p class="note-text">✅ Any Gmail or email works — no sign-up needed</p>
       </div>
 
-      <!-- ══════════════════════════════
-           ADMIN — dynamic credentials
-           ══════════════════════════════ -->
+      <!-- ══ ADMIN ══ -->
       <div id="admin-fields" style="display:none;">
 
-        <!-- First-time setup warning -->
-        <div class="setup-banner" id="setup-banner">
-          <strong>⚙️ First Time Setup</strong>
-          No admin account found. Create one below!
+        <!-- Shows saved email so user knows what account exists -->
+        <div class="saved-account-box" id="saved-account-box" style="display:none;">
+          <strong>🔐 Admin Account Found</strong>
+          <span id="saved-email-display"></span>
         </div>
 
-        <!-- Login / Register tabs -->
+        <!-- No account yet banner -->
+        <div class="setup-banner" id="setup-banner">
+          <strong>⚙️ First Time Setup</strong>
+          No admin account yet — create one below!
+        </div>
+
+        <!-- Sub-tabs -->
         <div class="admin-tabs">
           <div class="admin-tab-btn active" id="tab-login-btn"  onclick="switchAdminTab('login')">🔐 Sign In</div>
           <div class="admin-tab-btn"        id="tab-signup-btn" onclick="switchAdminTab('signup')">➕ Create Admin</div>
         </div>
 
-        <!-- Admin Sign In -->
+        <!-- SIGN IN panel -->
         <div id="admin-login-panel">
           <div class="form-group">
             <label class="form-label">Admin Email</label>
@@ -153,7 +162,7 @@
             <div class="input-group">
               <span class="input-icon">🔑</span>
               <input type="password" id="admin-password" class="form-control"
-                     placeholder="Your admin password" autocomplete="current-password"
+                     placeholder="Your admin password"
                      onkeydown="if(event.key==='Enter') loginAdmin()" />
               <span class="password-toggle" onclick="togglePw('admin-password','a-eye')" id="a-eye">👁️</span>
             </div>
@@ -161,10 +170,12 @@
           <button class="btn btn-primary btn-full btn-lg" onclick="loginAdmin()">
             Sign In to Dashboard →
           </button>
-          <p class="note-text" style="margin-top:10px;">No account yet? Click <strong>Create Admin</strong> above.</p>
+          <span class="reset-link" onclick="resetAdminAccount()">
+            🗑️ Forgot credentials? Reset admin account
+          </span>
         </div>
 
-        <!-- Admin Register / Create -->
+        <!-- CREATE ADMIN panel -->
         <div id="admin-signup-panel" style="display:none;">
           <div class="form-group">
             <label class="form-label">Your Name</label>
@@ -184,8 +195,7 @@
             <label class="form-label">Password</label>
             <div class="input-group">
               <span class="input-icon">🔑</span>
-              <input type="password" id="reg-password" class="form-control"
-                     placeholder="Min 6 characters"
+              <input type="password" id="reg-password" class="form-control" placeholder="Min 6 characters"
                      onkeydown="if(event.key==='Enter') document.getElementById('reg-confirm').focus()" />
               <span class="password-toggle" onclick="togglePw('reg-password','r-eye')" id="r-eye">👁️</span>
             </div>
@@ -194,8 +204,7 @@
             <label class="form-label">Confirm Password</label>
             <div class="input-group">
               <span class="input-icon">🔑</span>
-              <input type="password" id="reg-confirm" class="form-control"
-                     placeholder="Re-enter password"
+              <input type="password" id="reg-confirm" class="form-control" placeholder="Re-enter password"
                      onkeydown="if(event.key==='Enter') registerAdmin()" />
               <span class="password-toggle" onclick="togglePw('reg-confirm','rc-eye')" id="rc-eye">👁️</span>
             </div>
@@ -203,7 +212,6 @@
           <button class="btn btn-primary btn-full btn-lg" onclick="registerAdmin()">
             Create Admin Account →
           </button>
-          <p class="note-text" style="margin-top:10px;">Already have an account? Click <strong>Sign In</strong> above.</p>
         </div>
 
       </div><!-- /admin-fields -->
@@ -231,17 +239,29 @@
   <script>
 
     /* ══════════════════════════════════════
-       ADMIN CREDENTIALS  (stored in localStorage)
-       Key: lms_admin_creds  →  { name, email, password }
+       ADMIN CREDENTIALS stored in localStorage
+       Key: lms_admin_creds → { name, email, password }
        ══════════════════════════════════════ */
     const ADMIN_KEY = 'lms_admin_creds';
 
     function getAdminCreds() {
-      try { return JSON.parse(localStorage.getItem(ADMIN_KEY)); }
-      catch { return null; }
+      try {
+        const raw = localStorage.getItem(ADMIN_KEY);
+        if (!raw) return null;
+        return JSON.parse(raw);
+      } catch(e) {
+        console.error('Error reading admin creds:', e);
+        return null;
+      }
     }
+
     function saveAdminCreds(data) {
-      localStorage.setItem(ADMIN_KEY, JSON.stringify(data));
+      try {
+        localStorage.setItem(ADMIN_KEY, JSON.stringify(data));
+        console.log('Admin creds saved:', data.email); // debug
+      } catch(e) {
+        console.error('Error saving admin creds:', e);
+      }
     }
 
     /* ══════════════════════════════════════
@@ -263,21 +283,35 @@
         ftText.textContent = 'Not an admin? ';
         ftLink.textContent = 'Student access';
         ftLink.onclick = () => switchRole('student');
+        refreshAdminPanel(); // update UI based on saved creds
+      }
+    }
 
-        // If no admin account exists yet → auto-show signup tab
-        const creds = getAdminCreds();
-        if (!creds) {
-          document.getElementById('setup-banner').style.display = 'block';
-          switchAdminTab('signup');
-        } else {
-          document.getElementById('setup-banner').style.display = 'none';
-          switchAdminTab('login');
-        }
+    /* Refresh admin panel UI based on whether creds exist */
+    function refreshAdminPanel() {
+      const creds = getAdminCreds();
+      const savedBox    = document.getElementById('saved-account-box');
+      const setupBanner = document.getElementById('setup-banner');
+      const emailDisplay = document.getElementById('saved-email-display');
+
+      if (creds && creds.email) {
+        // Account exists — show saved email, go to sign-in tab
+        savedBox.style.display    = 'block';
+        setupBanner.style.display = 'none';
+        emailDisplay.textContent  = creds.email;
+        // Pre-fill email field for convenience
+        document.getElementById('admin-email').value = creds.email;
+        switchAdminTab('login');
+      } else {
+        // No account — show setup banner, go to create tab
+        savedBox.style.display    = 'none';
+        setupBanner.style.display = 'block';
+        switchAdminTab('signup');
       }
     }
 
     /* ══════════════════════════════════════
-       ADMIN TABS (Sign In / Create)
+       ADMIN SUB-TABS
        ══════════════════════════════════════ */
     function switchAdminTab(tab) {
       const isLogin = tab === 'login';
@@ -313,33 +347,45 @@
        ADMIN LOGIN — checks localStorage creds
        ══════════════════════════════════════ */
     function loginAdmin() {
-      const email = document.getElementById('admin-email').value.trim().toLowerCase();
-      const pass  = document.getElementById('admin-password').value;
+      // Trim whitespace carefully from both fields
+      const emailInput = document.getElementById('admin-email').value.trim();
+      const passInput  = document.getElementById('admin-password').value;  // don't trim password
 
-      if (!email || !pass) { showToast('Please enter email and password', 'warn'); return; }
+      if (!emailInput) { showToast('Please enter your email', 'warn'); return; }
+      if (!passInput)  { showToast('Please enter your password', 'warn'); return; }
 
       const creds = getAdminCreds();
+
+      // No account created yet
       if (!creds) {
         showToast('No admin account found. Please create one first.', 'warn');
-        switchAdminTab('signup'); return;
+        switchAdminTab('signup');
+        return;
       }
 
-      if (email !== creds.email.toLowerCase()) {
-        showToast('Email not found', 'error'); return;
-      }
-      if (pass !== creds.password) {
-        showToast('Incorrect password', 'error');
-        document.getElementById('admin-password').value = ''; return;
+      // Compare email (case-insensitive)
+      const emailMatch = emailInput.toLowerCase() === creds.email.toLowerCase();
+      if (!emailMatch) {
+        showToast('❌ Email does not match. Saved: ' + creds.email, 'error');
+        return;
       }
 
-      // ✅ Credentials match
+      // Compare password (exact match)
+      const passMatch = passInput === creds.password;
+      if (!passMatch) {
+        showToast('❌ Incorrect password. Please try again.', 'error');
+        document.getElementById('admin-password').value = '';
+        return;
+      }
+
+      // ✅ Login success
       Store.set(KEYS.USER, { name: creds.name, role: 'admin', email: creds.email });
       showToast('Welcome back, ' + creds.name + '! 🛡️', 'success');
       setTimeout(() => { window.location.href = 'admin.html'; }, 700);
     }
 
     /* ══════════════════════════════════════
-       ADMIN REGISTER — create new credentials
+       ADMIN REGISTER — create credentials
        ══════════════════════════════════════ */
     function registerAdmin() {
       const name     = document.getElementById('reg-name').value.trim();
@@ -347,6 +393,7 @@
       const password = document.getElementById('reg-password').value;
       const confirm  = document.getElementById('reg-confirm').value;
 
+      // Validate all fields
       if (!name)  { showToast('Please enter your name', 'warn'); return; }
       if (!email) { showToast('Please enter your email', 'warn'); return; }
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -356,25 +403,50 @@
         showToast('Password must be at least 6 characters', 'warn'); return;
       }
       if (password !== confirm) {
-        showToast('Passwords do not match', 'error'); return;
+        showToast('❌ Passwords do not match', 'error'); return;
       }
 
-      // Check if admin already exists
+      // Block if account already exists
       const existing = getAdminCreds();
       if (existing) {
-        showToast('An admin account already exists. Please sign in.', 'warn');
-        switchAdminTab('login'); return;
+        showToast('An admin account already exists. Sign in or reset it.', 'warn');
+        switchAdminTab('login');
+        return;
       }
 
-      // ✅ Save credentials to localStorage
+      // Save credentials
       saveAdminCreds({ name, email, password });
-      showToast('Admin account created! Please sign in.', 'success');
+      showToast('✅ Admin account created! Now sign in.', 'success');
 
-      // Auto-fill and switch to login
+      // Auto-fill email and switch to login
       document.getElementById('admin-email').value    = email;
       document.getElementById('admin-password').value = '';
-      document.getElementById('setup-banner').style.display = 'none';
+      refreshAdminPanel();
       switchAdminTab('login');
+    }
+
+    /* ══════════════════════════════════════
+       RESET ADMIN — clears saved credentials
+       ══════════════════════════════════════ */
+    function resetAdminAccount() {
+      const confirm = window.confirm(
+        'Are you sure you want to reset the admin account?\n\n' +
+        'This will delete the saved credentials and you will need to create a new admin account.'
+      );
+      if (!confirm) return;
+
+      localStorage.removeItem(ADMIN_KEY);
+      showToast('Admin account reset. Please create a new one.', 'info');
+
+      // Clear fields and show create tab
+      document.getElementById('admin-email').value    = '';
+      document.getElementById('admin-password').value = '';
+      document.getElementById('reg-name').value       = '';
+      document.getElementById('reg-email').value      = '';
+      document.getElementById('reg-password').value   = '';
+      document.getElementById('reg-confirm').value    = '';
+
+      refreshAdminPanel();
     }
 
     /* ══════════════════════════════════════
